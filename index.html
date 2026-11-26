@@ -166,6 +166,13 @@ table.mt{border-collapse:separate;border-spacing:0;width:100%;min-width:1040px;f
   .btn,.cel,.chipbtn{transition:border-color .15s,box-shadow .15s}
 }
 
+.pg-list{list-style:none;margin:14px 0 0;padding:0}
+.pg-row{display:flex;align-items:center;gap:10px 12px;flex-wrap:wrap;padding:12px 0;border-bottom:1px solid var(--line)}
+.pg-row:last-child{border-bottom:0}
+.pg-main{flex:1 1 220px;min-width:0;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.pg-main strong{font-weight:500;overflow-wrap:anywhere}
+.pg-acts{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.pg-filtros{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}
 [hidden]{display:none!important}
 html{color-scheme:light}
 .login{min-height:100vh;display:grid;place-items:center;padding:24px max(16px,env(safe-area-inset-left,0px))}
@@ -246,7 +253,7 @@ body{-webkit-tap-highlight-color:transparent;overscroll-behavior-y:none}
   <header class="topbar"><div>
     <p class="eyebrow">Ilé Òpó Iná Àse Oya</p>
     <h1>Controle de Ajoduns</h1>
-    <p class="muted" style="margin-top:8px">Gastos de cada celebração e contribuições dos filhos, num só lugar.</p>
+    <p class="muted" style="margin-top:8px">Gastos de cada celebração, giras e contribuições dos filhos, num só lugar.</p>
   </div><button class="btn sm" type="button" id="btnLogout">Sair</button></header>
   <div id="banner" class="banner" hidden></div>
 
@@ -254,11 +261,10 @@ body{-webkit-tap-highlight-color:transparent;overscroll-behavior-y:none}
 
   <div class="tabs" role="tablist" aria-label="Seções">
     <button class="tab" role="tab" id="tabCel" data-view="cel" aria-selected="true" aria-controls="viewCel">Celebrações</button>
+    <button class="tab" role="tab" id="tabGiras" data-view="giras" aria-selected="false" aria-controls="viewGiras">Giras</button>
     <button class="tab" role="tab" id="tabMens" data-view="mens" aria-selected="false" aria-controls="viewMens">Mensalidades</button>
     <button class="tab" role="tab" id="tabNiver" data-view="niver" aria-selected="false" aria-controls="viewNiver">Aniversários</button>
     <button class="tab" role="tab" id="tabFilhos" data-view="filhos" aria-selected="false" aria-controls="viewFilhos">Filhos</button>
-    <button class="tab" role="tab" id="tabLit" data-view="lit" aria-selected="false" aria-controls="viewCheck">Material litúrgico</button>
-    <button class="tab" role="tab" id="tabMerc" data-view="merc" aria-selected="false" aria-controls="viewCheck">Materiais de mercado</button>
   </div>
 
   <div id="viewCel" role="tabpanel" aria-labelledby="tabCel" class="layout">
@@ -316,6 +322,38 @@ body{-webkit-tap-highlight-color:transparent;overscroll-behavior-y:none}
           <div class="actions"><button class="btn primary" type="submit">Adicionar contribuição</button></div>
           <p class="hint" style="margin:0">Depois de adicionar, use o botão “📎 Anexar” na linha da contribuição para guardar o comprovante.</p>
         </form>
+      </div>
+    </div>
+  </div>
+
+  <div id="viewGiras" role="tabpanel" aria-labelledby="tabGiras" class="layout" hidden>
+    <div>
+      <div class="col-head">
+        <h3>Giras</h3>
+        <button class="btn primary sm" id="btnNewGira" type="button">+ Nova gira</button>
+      </div>
+      <form class="form" id="formGira" hidden>
+        <div class="field"><label for="giraDate">Data da gira (deixe vazio se ainda não definiu)</label><input id="giraDate" type="date"></div>
+        <div class="field"><label for="giraName">Qual gira vai ser?</label><input id="giraName" required maxlength="120" autocomplete="off" list="giraTipos" placeholder="Escolha da lista ou escreva"></div>
+        <datalist id="giraTipos"><option value="Gira de Exu"><option value="Gira de Pombagira"><option value="Gira de Caboclos"><option value="Gira de Pretos-Velhos"><option value="Gira de Crianças"><option value="Gira de Malandros"><option value="Gira de Marinheiros"><option value="Gira de Baianos"><option value="Gira de Boiadeiros"><option value="Gira de Ciganos"></datalist>
+        <div class="field"><label for="giraValor">Valor da ajuda de cada filho (R$)</label><input id="giraValor" type="number" inputmode="decimal" min="0" step="0.01" required></div>
+        <div class="field"><label for="giraNote">Observação</label><input id="giraNote" maxlength="200" autocomplete="off"></div>
+        <div class="actions">
+          <button class="btn primary" type="submit" id="giraSave">Salvar</button>
+          <button class="btn" type="button" id="giraCancel">Cancelar</button>
+        </div>
+      </form>
+      <ul class="cel-list" id="giraList"></ul>
+    </div>
+    <div>
+      <div class="panel" id="giraEmpty" hidden>
+        <p class="empty">Escolha uma gira na lista para ver quem pagou a ajuda de custo e guardar os comprovantes.</p>
+      </div>
+      <div class="panel" id="giraDetail" hidden>
+        <div id="giraHead"></div>
+        <div class="pg-filtros" role="tablist" aria-label="Filtro de pagamento" id="giraFiltros"></div>
+        <ul class="pg-list" id="giraRows"></ul>
+        <p class="hint" id="giraHint"></p>
       </div>
     </div>
   </div>
@@ -438,6 +476,8 @@ body{-webkit-tap-highlight-color:transparent;overscroll-behavior-y:none}
       </div>
       <div class="field"><label class="chk"><input type="checkbox" id="fCobranca" checked> <span>Participa das mensalidades e das contribuições (ajuda de custo)</span></label>
         <p class="hint" style="margin:0">Desmarque para quem só participa das comemorações. Ele continua nos aniversários e ajoduns, mas fica fora das mensalidades e das contribuições.</p></div>
+      <div class="field"><label class="chk"><input type="checkbox" id="fGiras" checked> <span>Participa da ajuda de custo das giras</span></label>
+        <p class="hint" style="margin:0">Desmarque para quem não entra na cobrança das giras. Ele sai da lista de cada gira, mas continua nas mensalidades.</p></div>
       <div class="field"><label for="fInicio">Paga mensalidade desde (mês). Vazio conta desde janeiro.</label><input id="fInicio" type="month"></div>
       <div class="actions">
         <button class="btn primary" type="submit" id="fSave">Cadastrar</button>
@@ -498,13 +538,14 @@ body{-webkit-tap-highlight-color:transparent;overscroll-behavior-y:none}
   var db = null, canWrite = true, raf = 0, toastT = 0;
   var MES_FULL=['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
   var INICIO={ano:2026,mes:11};
-  var S = {obs:null,check:[],ckF:null,ckEdit:null,comps:[],compF:null,compM:0,fotos:{},nf:'todos',ajoduns:[],gastos:[],contribs:[],filhos:[],mens:[],config:[],year:Math.max(new Date().getFullYear(),INICIO.ano),editingFilho:null,confFilho:null,sel:null,tab:'gastos',view:'cel',editing:null,confirmDel:false,q:''};
+  var S = {giras:[],gpag:[],gsel:null,gfil:'todos',gedit:null,gconf:false,obs:null,check:[],ckF:null,ckEdit:null,comps:[],compF:null,compM:0,fotos:{},nf:'todos',ajoduns:[],gastos:[],contribs:[],filhos:[],mens:[],config:[],year:Math.max(new Date().getFullYear(),INICIO.ano),editingFilho:null,confFilho:null,sel:null,tab:'gastos',view:'cel',editing:null,confirmDel:false,q:''};
   var MESES=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
   function defVal(){var c=S.config.filter(function(x){return x.id==='mensalidade'})[0];return c&&+c.value>0?+c.value:0}
   function valorOf(f){return +f.valor>0?+f.valor:defVal()}
   function mesIni(y){return y<INICIO.ano?13:(y===INICIO.ano?INICIO.mes:1)}
   function isPaid(x){return x.paid!==false&&x.paid!=='FALSE'&&x.paid!=='false'}
   function participa(f){return String(f.cobranca||'sim').toLowerCase()!=='nao'}
+  function participaGira(f){return String(f.giras||'sim').toLowerCase()!=='nao'}
   function mid(fid,m){return fid+'_'+S.year+'-'+String(m).padStart(2,'0')}
   function compOf(ref,tipo){return S.comps.filter(function(c){return c.refId===ref&&c.tipo===tipo})[0]}
   var X = '<svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" fill="none"/></svg>';
@@ -551,6 +592,13 @@ body{-webkit-tap-highlight-color:transparent;overscroll-behavior-y:none}
         '<div class="stat"><h3>Arrecadado · '+S.year+'</h3><b class="num">'+money(M.rec)+'</b></div>'+
         '<div class="stat"><h3>A receber · '+S.year+'</h3><b class="num">'+money(M.aberto)+'</b></div>'+
         '<div class="stat hl"><h3>Saldo</h3><b class="num">'+money(M.rec)+'</b></div>'
+    }else if(S.view==='giras'){
+      var G=girasTotals();
+      el.hidden=false;el.className='summary cols3';el.setAttribute('aria-label','Resumo das giras');
+      el.innerHTML=
+        '<div class="stat"><h3>Arrecadado · todas as giras</h3><b class="num">'+money(G.rec)+'</b></div>'+
+        '<div class="stat"><h3>A receber</h3><b class="num">'+money(G.aberto)+'</b></div>'+
+        '<div class="stat hl"><h3>Giras cadastradas</h3><b class="num">'+S.giras.length+'</b></div>'
     }else if(S.view==='cel'){
       var a=T.all,saldo=a.paid-a.gasto;
       el.hidden=false;el.className='summary';el.setAttribute('aria-label','Resumo dos ajoduns');
@@ -632,7 +680,7 @@ body{-webkit-tap-highlight-color:transparent;overscroll-behavior-y:none}
   function renderFilhos(){
     var byId={};S.ajoduns.forEach(function(a){byId[a.id]=a});
     var m=new Map();
-    S.filhos.forEach(function(r){var k=norm(r.name);if(k)m.set(k,{id:r.id,name:String(r.name).trim(),valor:+r.valor||0,cob:participa(r),paid:0,pend:0,aj:new Map()})});
+    S.filhos.forEach(function(r){var k=norm(r.name);if(k)m.set(k,{id:r.id,name:String(r.name).trim(),valor:+r.valor||0,cob:participa(r),giraOff:!participaGira(r),paid:0,pend:0,aj:new Map()})});
     S.contribs.forEach(function(c){
       var a=byId[c.ajodunId];if(!a)return;
       var k=norm(c.person);if(!k)return;
@@ -665,7 +713,7 @@ body{-webkit-tap-highlight-color:transparent;overscroll-behavior-y:none}
     }
     $('filhoList').innerHTML=arr.map(function(f){
       var chips=[];f.aj.forEach(function(n){chips.push('<span class="tag" title="'+esc(n)+'">'+esc(n)+'</span>')});
-      var sub=f.id?(!f.cob?'Só comemorações (fora das mensalidades e contribuições)':(f.valor>0?'Mensalidade '+money(f.valor):'Mensalidade padrão')):'Contribuiu em celebrações, sem cadastro';
+      var sub=f.id?(!f.cob?'Só comemorações (fora das mensalidades e contribuições)':(f.valor>0?'Mensalidade '+money(f.valor):'Mensalidade padrão')+(f.giraOff?' · Fora das giras':'')):'Contribuiu em celebrações, sem cadastro';
       if(f.id){var dn=parseD(f.nascimento),df=parseD(f.feitura);
         if(dn)sub+=' · Nasc. '+dn.toLocaleDateString('pt-BR');
         if(df)sub+=' · Ajodun '+df.toLocaleDateString('pt-BR')}
@@ -835,16 +883,16 @@ body{-webkit-tap-highlight-color:transparent;overscroll-behavior-y:none}
       S.sel=(up||list[0]).id
     }
     var T=totals();
-    renderSummary(T);renderList(T);renderDetail(T);renderFilhos();renderMens();renderComp();renderCheck();renderNiver();
+    renderSummary(T);renderList(T);renderDetail(T);renderFilhos();renderMens();renderComp();renderCheck();renderNiver();renderGiras();
     $('btnNewCel').hidden=!canWrite;
-    $('viewCel').hidden=S.view!=='cel';$('viewMens').hidden=S.view!=='mens';$('viewNiver').hidden=S.view!=='niver';$('viewFilhos').hidden=S.view!=='filhos';$('viewCheck').hidden=!(S.view==='lit'||S.view==='merc');
-    $('tabCel').setAttribute('aria-selected',S.view==='cel');$('tabMens').setAttribute('aria-selected',S.view==='mens');$('tabNiver').setAttribute('aria-selected',S.view==='niver');$('tabFilhos').setAttribute('aria-selected',S.view==='filhos');$('tabLit').setAttribute('aria-selected',S.view==='lit');$('tabMerc').setAttribute('aria-selected',S.view==='merc');
+    $('viewCel').hidden=S.view!=='cel';$('viewMens').hidden=S.view!=='mens';$('viewGiras').hidden=S.view!=='giras';$('viewNiver').hidden=S.view!=='niver';$('viewFilhos').hidden=S.view!=='filhos';$('viewCheck').hidden=!(S.view==='lit'||S.view==='merc');
+    $('tabCel').setAttribute('aria-selected',S.view==='cel');$('tabMens').setAttribute('aria-selected',S.view==='mens');$('tabGiras').setAttribute('aria-selected',S.view==='giras');$('tabNiver').setAttribute('aria-selected',S.view==='niver');$('tabFilhos').setAttribute('aria-selected',S.view==='filhos');
     if(!canWrite){var b=$('banner');b.hidden=false;b.textContent='Você está vendo em modo leitura. Para registrar gastos e contribuições, peça acesso de colaborador.'}
   }
   function schedule(){cancelAnimationFrame(raf);raf=requestAnimationFrame(render)}
 
   /* ---- dados: planilha do Google, via Apps Script ---- */
-  var KEY={Celebracoes:'ajoduns',Gastos:'gastos',Contribuicoes:'contribs',Filhos:'filhos',Mensalidades:'mens',Config:'config',Solicitacoes:'sols',Anexos:'comps',Checklist:'check'};
+  var KEY={Celebracoes:'ajoduns',Gastos:'gastos',Contribuicoes:'contribs',Filhos:'filhos',Mensalidades:'mens',Config:'config',Solicitacoes:'sols',Anexos:'comps',Checklist:'check',Giras:'giras',GiraPag:'gpag'};
   var PASS='',pending=0,authed=false,pollT=0;
   function newId(){return 'x'+Math.random().toString(36).slice(2,9)+Date.now().toString(36)}
   function store(k,v){try{if(v==null)localStorage.removeItem(k);else localStorage.setItem(k,v)}catch(e){}}
@@ -963,6 +1011,15 @@ body{-webkit-tap-highlight-color:transparent;overscroll-behavior-y:none}
     else if(act==='ckzap')ckZap();
     else if(act==='ckcopy')ckCopiar();
     else if(act==='ckmsgclose')$('ckMsgBox').hidden=true;
+    else if(act==='gsel'){S.gsel=id;S.gconf=false;render();
+      if(window.matchMedia('(max-width:860px)').matches)$('giraDetail').scrollIntoView({behavior:'smooth',block:'start'})}
+    else if(act==='gedit')openGiraForm(S.gsel);
+    else if(act==='gdel'){S.gconf=true;render()}
+    else if(act==='gdelno'){S.gconf=false;render()}
+    else if(act==='gdelok')delGira(S.gsel);
+    else if(act==='gfil'){S.gfil=el.dataset.v;render()}
+    else if(act==='gtog')togglePag(S.gsel,el.dataset.f);
+    else if(act==='gzap')zapGira(S.gsel,el.dataset.f);
     else if(act==='copycad')copyText(API_URL+'?cadastro=1').then(function(ok){toast(ok?'Link de cadastro copiado.':'Não consegui copiar. Selecione o link e copie.')});
   });
   function cobrar(fid){
@@ -1055,12 +1112,12 @@ body{-webkit-tap-highlight-color:transparent;overscroll-behavior-y:none}
   function openFilhoForm(id,name){
     S.editingFilho=id||null;
     var f=id?S.filhos.filter(function(x){return x.id===id})[0]:null;
-    $('fNome').value=f?f.name:(name||'');$('fValor').value=f&&+f.valor>0?f.valor:'';$('fNasc').value=f&&f.nascimento?f.nascimento:'';$('fFeitura').value=f&&f.feitura?f.feitura:'';$('fInicio').value=f&&f.inicio?f.inicio:'';$('fCobranca').checked=f?participa(f):true;$('fTel').value=f&&f.telefone?String(f.telefone):'';$('fTrat').value=f&&f.tratamento?f.tratamento:'';
+    $('fNome').value=f?f.name:(name||'');$('fValor').value=f&&+f.valor>0?f.valor:'';$('fNasc').value=f&&f.nascimento?f.nascimento:'';$('fFeitura').value=f&&f.feitura?f.feitura:'';$('fInicio').value=f&&f.inicio?f.inicio:'';$('fCobranca').checked=f?participa(f):true;$('fGiras').checked=f?participaGira(f):true;$('fTel').value=f&&f.telefone?String(f.telefone):'';$('fTrat').value=f&&f.tratamento?f.tratamento:'';
     $('filhoFormTitle').textContent=f?'Editar filho':'Cadastrar filho';
     $('fSave').textContent=f?'Salvar':'Cadastrar';$('fCancel').hidden=!f;
     $('fNome').focus();$('formFilho').scrollIntoView({block:'nearest'})
   }
-  function resetFilhoForm(){S.editingFilho=null;$('fCobranca').checked=true;$('fTel').value='';$('fTrat').value='';$('fNome').value='';$('fValor').value='';$('fNasc').value='';$('fFeitura').value='';$('fInicio').value='';$('filhoFormTitle').textContent='Cadastrar filho';$('fSave').textContent='Cadastrar';$('fCancel').hidden=true}
+  function resetFilhoForm(){S.editingFilho=null;$('fCobranca').checked=true;$('fGiras').checked=true;$('fTel').value='';$('fTrat').value='';$('fNome').value='';$('fValor').value='';$('fNasc').value='';$('fFeitura').value='';$('fInicio').value='';$('filhoFormTitle').textContent='Cadastrar filho';$('fSave').textContent='Cadastrar';$('fCancel').hidden=true}
   $('fCancel').addEventListener('click',resetFilhoForm);
   $('formFilho').addEventListener('submit',function(e){
     e.preventDefault();
@@ -1069,7 +1126,7 @@ body{-webkit-tap-highlight-color:transparent;overscroll-behavior-y:none}
     var dup=S.filhos.some(function(f){return norm(f.name)===k&&f.id!==S.editingFilho});
     if(dup){toast('Esse filho já está cadastrado.');return}
     var v=parseFloat($('fValor').value);
-    var row={id:S.editingFilho||newId(),name:nome,valor:v>0?Math.round(v*100)/100:0,nascimento:$('fNasc').value||'',feitura:$('fFeitura').value||'',inicio:$('fInicio').value||'',cobranca:$('fCobranca').checked?'sim':'nao',telefone:$('fTel').value.replace(/\D/g,''),tratamento:$('fTrat').value};
+    var row={id:S.editingFilho||newId(),name:nome,valor:v>0?Math.round(v*100)/100:0,nascimento:$('fNasc').value||'',feitura:$('fFeitura').value||'',inicio:$('fInicio').value||'',cobranca:$('fCobranca').checked?'sim':'nao',giras:$('fGiras').checked?'sim':'nao',telefone:$('fTel').value.replace(/\D/g,''),tratamento:$('fTrat').value};
     if(!S.editingFilho)row.createdAt=Date.now();
     resetFilhoForm();toast('Filho salvo.');$('fNome').focus();
     put('Filhos',row)
@@ -1089,9 +1146,10 @@ body{-webkit-tap-highlight-color:transparent;overscroll-behavior-y:none}
   async function delFilho(id){
     if(!id)return;
     S.confFilho=null;toast('Filho excluído.');
-    var cs=S.comps.filter(function(c){return c.tipo==='mens'&&String(c.refId).slice(0,-8)===id});
+    var cs=S.comps.filter(function(c){return (c.tipo==='mens'&&String(c.refId).slice(0,-8)===id)||(c.tipo==='gira'&&String(c.refId).split(':')[1]===id)});
     for(var i=0;i<cs.length;i++)await del('Anexos',cs[i].id);
     await delWhere('Mensalidades','filhoId',id);
+    await delWhere('GiraPag','filhoId',id);
     await del('Filhos',id)
   }
 
@@ -1328,6 +1386,120 @@ body{-webkit-tap-highlight-color:transparent;overscroll-behavior-y:none}
   $('cardModal').addEventListener('click',function(e){if(e.target===$('cardModal'))fecharCartao()});
   document.addEventListener('keydown',function(e){if(e.key==='Escape'&&!$('cardModal').hidden)fecharCartao()});
 
+  /* ---- giras: ajuda de custo de cada filho ---- */
+  function gid(g,fid){return g+':'+fid}
+  function filhosGira(){return S.filhos.filter(participaGira).sort(function(a,b){return String(a.name).localeCompare(String(b.name))})}
+  function pagouGira(g,fid){var x=S.gpag.filter(function(p){return p.id===gid(g,fid)})[0];return !!(x&&isPaid(x))}
+  function girasTotals(){
+    var fs=filhosGira(),rec=0,aberto=0;
+    S.giras.forEach(function(g){
+      var v=+g.valor||0;
+      fs.forEach(function(f){if(pagouGira(g.id,f.id))rec+=v;else aberto+=v})
+    });
+    return {rec:rec,aberto:aberto}
+  }
+  function girasOrd(){
+    return S.giras.slice().sort(function(a,b){
+      if(!a.date&&!b.date)return String(a.name).localeCompare(String(b.name));
+      if(!a.date)return 1;if(!b.date)return -1;
+      return a.date<b.date?-1:a.date>b.date?1:0
+    })
+  }
+  function renderGiras(){
+    $('btnNewGira').hidden=!canWrite;
+    var list=girasOrd();
+    if(S.gsel&&!S.giras.some(function(g){return g.id===S.gsel}))S.gsel=null;
+    if(!S.gsel&&list.length){
+      var t0=new Date();t0.setHours(0,0,0,0);
+      var up=list.filter(function(g){return g.date&&parseD(g.date)>=t0})[0];
+      S.gsel=(up||list[0]).id
+    }
+    var fs=filhosGira();
+    $('giraList').innerHTML=list.length?list.map(function(g){
+      var d=parseD(g.date),v=+g.valor||0,pg=fs.filter(function(f){return pagouGira(g.id,f.id)}).length;
+      var chip=d?'<div class="date-chip"><b class="num">'+String(d.getDate()).padStart(2,'0')+'</b><span>'+esc(d.toLocaleDateString('pt-BR',{month:'short'}).replace('.',''))+'</span></div>'
+               :'<div class="date-chip tbd"><b>?</b><span>a definir</span></div>';
+      return '<li><button type="button" class="cel" data-act="gsel" data-id="'+esc(g.id)+'" aria-current="'+(g.id===S.gsel)+'">'+chip+
+        '<span class="cel-main"><strong>'+esc(g.name)+'</strong><small>'+esc(whenLabel(g.date))+' · '+pg+' de '+fs.length+' pagaram</small></span>'+
+        '<span class="cel-saldo num">'+money(pg*v)+'<small>arrecadado</small></span></button></li>'
+    }).join(''):'<li class="empty">Nenhuma gira cadastrada ainda. Toque em “+ Nova” para começar.</li>';
+
+    var g=S.giras.filter(function(x){return x.id===S.gsel})[0];
+    $('giraEmpty').hidden=!!g;$('giraDetail').hidden=!g;
+    if(!g)return;
+    var v=+g.valor||0,pagos=fs.filter(function(f){return pagouGira(g.id,f.id)}),rec=pagos.length*v,prev=fs.length*v,aberto=prev-rec;
+    var pct=prev>0?Math.round(rec/prev*100):null;
+    var h='<div class="dh"><div><p class="eyebrow">'+esc(whenLabel(g.date))+' · '+esc(longDate(g.date))+'</p><h2>'+esc(g.name)+'</h2>'+
+      '<p class="muted" style="margin-top:6px">Ajuda de cada filho: <b class="num">'+money(v)+'</b>'+(g.note?' · '+esc(g.note):'')+'</p></div>';
+    if(canWrite)h+='<div class="actions"><button class="btn sm" type="button" data-act="gedit">Editar</button><button class="btn sm danger" type="button" data-act="gdel">Excluir</button></div>';
+    h+='</div>';
+    if(S.gconf&&canWrite)h+='<div class="confirm" role="alert"><p>Excluir esta gira, os pagamentos marcados e os comprovantes dela? Não dá para desfazer.</p><div class="actions"><button class="btn danger sm" type="button" data-act="gdelok">Sim, excluir</button><button class="btn sm" type="button" data-act="gdelno">Cancelar</button></div></div>';
+    h+='<div class="stats3">'+
+      '<div class="mini"><h3>Arrecadado</h3><b class="num">'+money(rec)+'</b></div>'+
+      '<div class="mini"><h3>A receber</h3><b class="num">'+money(aberto)+'</b></div>'+
+      '<div class="mini"><h3>Pagaram</h3><b class="num">'+pagos.length+' de '+fs.length+'</b></div></div>';
+    if(pct!==null)h+='<div class="cover">Já foi arrecadado '+pct+'% do previsto<div class="bar" aria-hidden="true"><i style="width:'+pct+'%"></i></div></div>';
+    $('giraHead').innerHTML=h;
+
+    var F=[['todos','Todos ('+fs.length+')'],['nao','Não pagaram ('+(fs.length-pagos.length)+')'],['pagos','Pagaram ('+pagos.length+')']];
+    $('giraFiltros').innerHTML=F.map(function(x){return '<button class="chipbtn" type="button" role="tab" data-act="gfil" data-v="'+x[0]+'" aria-selected="'+(S.gfil===x[0])+'">'+x[1]+'</button>'}).join('');
+    var vis=fs.filter(function(f){var p=pagouGira(g.id,f.id);return S.gfil==='pagos'?p:(S.gfil==='nao'?!p:true)});
+    if(!fs.length){$('giraRows').innerHTML='<li class="empty">'+(S.filhos.length?'Nenhum filho está marcado para a ajuda das giras. Marque na aba Filhos, em Editar.':'Cadastre os filhos na aba Filhos para controlar os pagamentos.')+'</li>'}
+    else if(!vis.length){$('giraRows').innerHTML='<li class="empty">'+(S.gfil==='pagos'?'Ninguém pagou ainda.':'Todos já pagaram. 🎉')+'</li>'}
+    else $('giraRows').innerHTML=vis.map(function(f){
+      var p=pagouGira(g.id,f.id),ref=gid(g.id,f.id),cp=compOf(ref,'gira');
+      var st='<button class="pill '+(p?'paid':'pend')+'" type="button" data-act="gtog" data-f="'+esc(f.id)+'" '+(canWrite?'':'disabled ')+'aria-label="'+esc(f.name)+': '+(p?'pago. Desmarcar pagamento':'não pagou. Marcar como pago')+'">'+(p?'Pago':'Não pago')+'</button>';
+      var acts='';
+      if(cp)acts+='<button class="btn sm" type="button" data-act="compver" data-id="'+esc(cp.id)+'" aria-label="Ver comprovante de '+esc(f.name)+'">📎 Ver comprovante</button>';
+      else if(canWrite)acts+='<button class="btn sm" type="button" data-act="cattach" data-ref="'+esc(ref)+'" data-t="gira" aria-label="Anexar comprovante de '+esc(f.name)+'">📎 Anexar comprovante</button>';
+      if(!p&&canWrite)acts+='<button class="btn sm" type="button" data-act="gzap" data-f="'+esc(f.id)+'">Cobrar no WhatsApp</button>';
+      return '<li class="pg-row"><div class="pg-main"><strong>'+esc(f.name)+'</strong>'+st+'</div><span class="amt num">'+money(v)+'</span><div class="pg-acts">'+acts+'</div></li>'
+    }).join('');
+    var fora=S.filhos.filter(function(f){return !participaGira(f)}).map(function(f){return f.name});
+    $('giraHint').textContent=(fora.length?'Fora da cobrança das giras: '+fora.join(', ')+'. ':'')+(canWrite?'Toque em “Pago” ou “Não pago” para mudar a situação. O comprovante pode ser foto ou PDF e fica guardado mesmo se você desmarcar o pagamento. Para tirar alguém da cobrança, vá em Filhos, Editar.':'')
+  }
+  function openGiraForm(id){
+    S.gedit=id||null;
+    var g=id?S.giras.filter(function(x){return x.id===id})[0]:null;
+    var ult=girasOrd().slice(-1)[0];$('giraName').value=g?g.name:'';$('giraDate').value=g&&g.date?g.date:'';$('giraValor').value=g?(+g.valor>0?g.valor:''):(ult&&+ult.valor>0?ult.valor:'');$('giraNote').value=g&&g.note?g.note:'';
+    $('formGira').hidden=false;$('giraName').focus();$('formGira').scrollIntoView({block:'nearest'})
+  }
+  $('btnNewGira').addEventListener('click',function(){openGiraForm(null)});
+  $('giraCancel').addEventListener('click',function(){$('formGira').hidden=true;S.gedit=null});
+  $('formGira').addEventListener('submit',function(e){
+    e.preventDefault();
+    var v=parseFloat($('giraValor').value);if(!(v>=0))return;
+    var data={name:$('giraName').value.trim(),date:$('giraDate').value||'',valor:Math.round(v*100)/100,note:$('giraNote').value.trim()};
+    if(!data.name)return;
+    data.id=S.gedit||newId();if(!S.gedit){data.createdAt=Date.now();S.gsel=data.id;S.gfil='todos'}
+    $('formGira').hidden=true;S.gedit=null;toast('Gira salva.');
+    put('Giras',data)
+  });
+  async function delGira(id){
+    if(!id)return;
+    var cs=S.comps.filter(function(c){return c.tipo==='gira'&&String(c.refId).split(':')[0]===id});
+    S.gsel=null;S.gconf=false;toast('Gira excluída.');
+    for(var i=0;i<cs.length;i++)await del('Anexos',cs[i].id);
+    await delWhere('GiraPag','giraId',id);
+    await del('Giras',id)
+  }
+  function togglePag(g,fid){
+    if(!g||!S.filhos.some(function(f){return f.id===fid}))return;
+    var id=gid(g,fid);
+    if(pagouGira(g,fid))del('GiraPag',id);
+    else put('GiraPag',{id:id,giraId:g,filhoId:fid,paid:true,paidAt:Date.now()})
+  }
+  function zapGira(g,fid){
+    var gr=S.giras.filter(function(x){return x.id===g})[0],f=S.filhos.filter(function(x){return x.id===fid})[0];if(!gr||!f)return;
+    var d=parseD(gr.date),v=+gr.valor||0,primeiro=String(f.name).trim().split(' ')[0];
+    var t='Olá, '+tratamento(f)+' '+primeiro+'! Tudo bem com você? 😊\n\n'+
+      'Passando para lembrar da ajuda de custo da gira “'+gr.name+'”'+(d?' do dia '+d.toLocaleDateString('pt-BR'):'')+(v>0?', no valor de '+money(v).replace(/\u00a0/g,' '):'')+', que ainda consta como pendente em nosso controle.\n\n'+
+      'Caso já tenha realizado o pagamento, pode desconsiderar esta mensagem e, se puder, nos envie o comprovante para anexarmos!\n\n'+
+      'Se estiver passando por alguma dificuldade ou tiver qualquer dúvida, fique à vontade para conversar comigo ou com nossa diretoria.\n\n'+
+      'Agradecemos pela atenção! ❤️';
+    abrirZap(f,t)
+  }
+
   /* ---- comprovantes de pagamento (mensalidades e contribuições) ---- */
   /* Um comprovante por mês de cada filho e um por contribuição. Anexar de novo substitui o anterior. */
   var compPick={ref:null,tipo:null};
@@ -1415,6 +1587,10 @@ body{-webkit-tap-highlight-color:transparent;overscroll-behavior-y:none}
   });
 
   function tituloComp(c){
+    if(c.tipo==='gira'){
+      var gp=String(c.refId).split(':'),g=S.giras.filter(function(x){return x.id===gp[0]})[0],ff=S.filhos.filter(function(x){return x.id===gp[1]})[0];
+      return (ff?ff.name:'Filho')+' · ajuda da gira'+(g?' '+g.name:'')
+    }
     if(c.tipo==='mens'){
       var fid=String(c.refId).slice(0,-8),ym=String(c.refId).slice(-7).split('-');
       var f=S.filhos.filter(function(x){return x.id===fid})[0];
